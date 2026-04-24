@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MediScan AI — Disease Prediction</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sage: #8aab94;
+    --sage-light: #e8f0eb;
+    --sage-mid: #c5d9cb;
+    --sage-dark: #4a7a5a;
+    --warm-white: #faf9f7;
+    --warm-off: #f3f1ed;
+    --warm-card: #ffffff;
+    --muted-text: #7a7670;
+    --body-text: #3d3b38;
+    --heading: #1e1d1b;
+    --border: #e0ddd8;
+    --rose: #c4847a;
+    --rose-light: #f5ece9;
+    --amber: #c4a46a;
+    --amber-light: #f5eedf;
+    --sky: #7a9fc4;
+    --sky-light: #e9eff5;
+    --violet: #9a87c0;
+    --violet-light: #ede9f5;
+    --teal: #6aab9c;
+    --teal-light: #e2f0ed;
+    --radius: 16px;
+    --radius-sm: 10px;
+    --shadow: 0 2px 16px rgba(0,0,0,0.07);
+    --shadow-hover: 0 6px 28px rgba(0,0,0,0.13);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--warm-white);
+    color: var(--body-text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ---- NAV ---- */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(250,249,247,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 64px;
+  }
+  .nav-logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.35rem;
+    color: var(--heading);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .nav-logo-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--sage);
+    display: inline-block;
+  }
+  .nav-links {
+    display: flex; gap: 2rem; list-style: none;
+  }
+  .nav-links a {
+    font-size: 0.875rem; font-weight: 500;
+    color: var(--muted-text); text-decoration: none;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--heading); }
+
+  /* ---- HERO ---- */
+  .hero {
+    padding: 5rem 2rem 3rem;
+    text-align: center;
+    max-width: 720px;
+    margin: 0 auto;
+    animation: fadeUp 0.7s ease both;
+  }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: var(--sage-light);
+    color: var(--sage-dark);
+    font-size: 0.78rem; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 6px 14px; border-radius: 999px;
+    margin-bottom: 1.5rem;
+  }
+  .hero-badge-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--sage); }
+  h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(2.2rem, 5vw, 3.5rem);
+    line-height: 1.15;
+    color: var(--heading);
+    margin-bottom: 1.1rem;
+  }
+  h1 em { font-style: italic; color: var(--sage-dark); }
+  .hero-sub {
+    font-size: 1.05rem; color: var(--muted-text);
+    line-height: 1.7; max-width: 520px; margin: 0 auto 2.5rem;
+  }
+
+  /* ---- DISEASE SELECTOR ---- */
+  .selector-section {
+    padding: 0 1.5rem 4rem;
+    max-width: 960px;
+    margin: 0 auto;
+    animation: fadeUp 0.8s 0.15s ease both;
+  }
+  .selector-label {
+    text-align: center;
+    font-size: 0.8rem; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--muted-text);
+    margin-bottom: 1.5rem;
+  }
+  .disease-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+  }
+  .disease-card {
+    background: var(--warm-card);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+    position: relative;
+    overflow: hidden;
+  }
+  .disease-card::before {
+    content: '';
+    position: absolute; inset: 0;
+    opacity: 0;
+    transition: opacity 0.25s;
+    border-radius: calc(var(--radius) - 2px);
+  }
+  .disease-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-hover); }
+  .disease-card.active { border-width: 2px; transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+  .disease-card.active::before { opacity: 1; }
+
+  /* Per-disease colors */
+  .dc-heart { --dc: var(--rose); --dc-light: var(--rose-light); }
+  .dc-liver { --dc: var(--amber); --dc-light: var(--amber-light); }
+  .dc-brain { --dc: var(--violet); --dc-light: var(--violet-light); }
+  .dc-lung  { --dc: var(--sky);   --dc-light: var(--sky-light); }
+  .dc-ckd   { --dc: var(--teal);  --dc-light: var(--teal-light); }
+
+  .disease-card::before { background: var(--dc-light); }
+  .disease-card.active { border-color: var(--dc); }
+
+  .disease-icon {
+    width: 52px; height: 52px;
+    border-radius: 14px;
+    background: var(--dc-light);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 0.9rem;
+    transition: background 0.25s;
+  }
+  .disease-card.active .disease-icon { background: var(--dc); }
+  .disease-icon svg { width: 26px; height: 26px; }
+  .disease-card:not(.active) .disease-icon svg { stroke: var(--dc); }
+  .disease-card.active .disease-icon svg { stroke: white; }
+
+  .disease-name {
+    font-size: 0.875rem; font-weight: 600;
+    color: var(--heading);
+    margin-bottom: 4px;
+  }
+  .disease-tag {
+    font-size: 0.72rem; color: var(--muted-text);
+    font-weight: 400;
+  }
+  .disease-card.active .disease-name { color: var(--dc); }
+
+  /* ---- FORM PANEL ---- */
+  #form-section {
+    max-width: 760px; margin: 0 auto;
+    padding: 0 1.5rem 5rem;
+    display: none;
+    animation: fadeUp 0.5s ease both;
+  }
+  #form-section.visible { display: block; }
+
+  .form-card {
+    background: var(--warm-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .form-header {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 14px;
+  }
+  .form-header-icon {
+    width: 42px; height: 42px; border-radius: 12px;
+    background: var(--dc-light, var(--sage-light));
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .form-header-icon svg { width: 22px; height: 22px; stroke: var(--dc, var(--sage-dark)); }
+  .form-header h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.3rem; color: var(--heading);
+  }
+  .form-header p { font-size: 0.82rem; color: var(--muted-text); margin-top: 2px; }
+
+  .form-body { padding: 2rem; }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1.2rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label {
+    font-size: 0.78rem; font-weight: 600;
+    letter-spacing: 0.03em; color: var(--muted-text);
+    text-transform: uppercase;
+  }
+  .field input, .field select {
+    height: 42px;
+    background: var(--warm-off);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0 14px;
+    font-size: 0.92rem;
+    color: var(--heading);
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    width: 100%;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  .field input:focus, .field select:focus {
+    border-color: var(--sage);
+    box-shadow: 0 0 0 3px rgba(138,171,148,0.18);
+  }
+  .field select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237a7670' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+  }
+
+  /* Image upload */
+  .upload-area {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 2.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--warm-off);
+    margin-bottom: 1.5rem;
+  }
+  .upload-area:hover { border-color: var(--sage); background: var(--sage-light); }
+  .upload-area.has-file { border-color: var(--sage); background: var(--sage-light); border-style: solid; }
+  .upload-icon {
+    width: 44px; height: 44px;
+    background: var(--sage-light);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 0.8rem;
+  }
+  .upload-icon svg { width: 22px; height: 22px; stroke: var(--sage-dark); }
+  .upload-text { font-size: 0.9rem; color: var(--muted-text); }
+  .upload-text strong { color: var(--sage-dark); }
+  #preview-img { max-height: 160px; border-radius: 10px; margin-top: 1rem; display: none; }
+  #file-input { display: none; }
+
+  /* Submit button */
+  .submit-btn {
+    width: 100%; height: 50px;
+    background: var(--heading);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem; font-weight: 600;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    transition: all 0.2s;
+    letter-spacing: 0.02em;
+  }
+  .submit-btn:hover { background: var(--sage-dark); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(74,122,90,0.3); }
+  .submit-btn:active { transform: translateY(0); }
+  .submit-btn.loading { opacity: 0.7; pointer-events: none; }
+
+  /* Spinner */
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+  .submit-btn.loading .spinner { display: block; }
+  .submit-btn.loading .btn-text { display: none; }
+
+  /* ---- RESULT ---- */
+  #result-section {
+    max-width: 760px; margin: 0 auto 4rem;
+    padding: 0 1.5rem;
+    display: none;
+  }
+  #result-section.visible { display: block; animation: fadeUp 0.4s ease both; }
+
+  .result-card {
+    border-radius: var(--radius);
+    padding: 2rem;
+    border: 1px solid var(--border);
+    background: var(--warm-card);
+    box-shadow: var(--shadow);
+  }
+  .result-card.positive { border-color: var(--rose); background: var(--rose-light); }
+  .result-card.negative { border-color: var(--sage); background: var(--sage-light); }
+
+  .result-top {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 1.5rem;
+  }
+  .result-icon {
+    width: 48px; height: 48px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .result-card.positive .result-icon { background: var(--rose); }
+  .result-card.negative .result-icon { background: var(--sage); }
+  .result-icon svg { width: 24px; height: 24px; stroke: white; fill: none; }
+  .result-label { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted-text); }
+  .result-value { font-family: 'DM Serif Display', serif; font-size: 1.6rem; color: var(--heading); }
+  .result-card.positive .result-value { color: var(--rose); }
+  .result-card.negative .result-value { color: var(--sage-dark); }
+
+  .confidence-row { display: flex; align-items: center; gap: 14px; }
+  .confidence-label { font-size: 0.82rem; color: var(--muted-text); white-space: nowrap; }
+  .confidence-bar-wrap {
+    flex: 1; height: 8px;
+    background: rgba(0,0,0,0.07);
+    border-radius: 999px; overflow: hidden;
+  }
+  .confidence-bar {
+    height: 100%; border-radius: 999px;
+    transition: width 1s cubic-bezier(0.22,1,0.36,1);
+  }
+  .result-card.positive .confidence-bar { background: var(--rose); }
+  .result-card.negative .confidence-bar { background: var(--sage); }
+  .confidence-pct { font-size: 0.9rem; font-weight: 600; color: var(--heading); white-space: nowrap; }
+
+  .result-disclaimer {
+    margin-top: 1.2rem;
+    font-size: 0.78rem; color: var(--muted-text);
+    line-height: 1.6;
+    padding-top: 1.2rem;
+    border-top: 1px solid rgba(0,0,0,0.07);
+  }
+
+  /* Error */
+  .result-card.error { border-color: #e0a0a0; background: #fdf2f2; }
+  .result-card.error .result-value { font-family: 'DM Sans', sans-serif; font-size: 1rem; color: #b04040; }
+
+  /* ---- HOW IT WORKS ---- */
+  .how-section {
+    background: var(--warm-off);
+    border-top: 1px solid var(--border);
+    padding: 4rem 2rem;
+  }
+  .how-inner { max-width: 900px; margin: 0 auto; }
+  .section-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.8rem; color: var(--heading);
+    text-align: center; margin-bottom: 0.5rem;
+  }
+  .section-sub {
+    text-align: center; color: var(--muted-text);
+    font-size: 0.92rem; margin-bottom: 3rem;
+  }
+  .steps-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+  }
+  .step-card {
+    background: var(--warm-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+  }
+  .step-num {
+    font-family: 'DM Serif Display', serif; font-size: 2rem;
+    color: var(--sage-mid); line-height: 1; margin-bottom: 0.8rem;
+  }
+  .step-title { font-weight: 600; font-size: 0.95rem; color: var(--heading); margin-bottom: 0.4rem; }
+  .step-desc { font-size: 0.83rem; color: var(--muted-text); line-height: 1.6; }
+
+  /* ---- FOOTER ---- */
+  footer {
+    background: var(--heading);
+    color: rgba(255,255,255,0.55);
+    text-align: center;
+    padding: 2rem;
+    font-size: 0.82rem;
+  }
+  footer strong { color: rgba(255,255,255,0.85); }
+
+  /* ---- ANIMATIONS ---- */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* ---- RESPONSIVE ---- */
+  @media (max-width: 600px) {
+    nav { padding: 0 1rem; }
+    .nav-links { display: none; }
+    .form-body { padding: 1.25rem; }
+    .form-grid { grid-template-columns: 1fr; }
+    .hero { padding: 3rem 1.5rem 2rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">
+    <span class="nav-logo-dot"></span>
+    MediScan <em style="font-family:'DM Serif Display',serif;font-style:italic;font-weight:400;">AI</em>
+  </div>
+  <ul class="nav-links">
+    <li><a href="#selector">Predict</a></li>
+    <li><a href="#how">How it works</a></li>
+    <li><a href="#" style="color:var(--sage-dark)">About</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge"><span class="hero-badge-dot"></span> AI-Powered Clinical Insights</div>
+  <h1>Predict disease risk<br><em>with confidence</em></h1>
+  <p class="hero-sub">Enter patient biomarkers or upload a scan. Our trained models deliver instant, transparent risk assessments across five disease categories.</p>
+</section>
+
+<!-- DISEASE SELECTOR -->
+<section class="selector-section" id="selector">
+  <p class="selector-label">Select a condition to assess</p>
+  <div class="disease-grid">
+    <div class="disease-card dc-heart" data-disease="heart" onclick="selectDisease(this)">
+      <div class="disease-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+        </svg>
+      </div>
+      <div class="disease-name">Heart Disease</div>
+      <div class="disease-tag">Cardiology · Clinical</div>
+    </div>
+
+    <div class="disease-card dc-liver" data-disease="liver" onclick="selectDisease(this)">
+      <div class="disease-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <ellipse cx="12" cy="13" rx="8" ry="6"/>
+          <path d="M6 10c1-4 4-6 6-6s5 2 6 6"/>
+          <path d="M9 15c0 2 1.5 3 3 3"/>
+        </svg>
+      </div>
+      <div class="disease-name">Liver Cirrhosis</div>
+      <div class="disease-tag">Hepatology · Lab</div>
+    </div>
+
+    <div class="disease-card dc-brain" data-disease="brain" onclick="selectDisease(this)">
+      <div class="disease-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.46 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24A2.5 2.5 0 0 1 9.5 2Z"/>
+          <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.46 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24A2.5 2.5 0 0 0 14.5 2Z"/>
+        </svg>
+      </div>
+      <div class="disease-name">Brain Tumor</div>
+      <div class="disease-tag">Neurology · MRI Scan</div>
+    </div>
+
+    <div class="disease-card dc-lung" data-disease="lung" onclick="selectDisease(this)">
+      <div class="disease-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 4v8a6 6 0 0 0 12 0V4"/>
+          <path d="M12 4v8"/>
+          <path d="M6 12a6 6 0 0 0 0 8c1.5 0 3-1 4-2"/>
+          <path d="M18 12a6 6 0 0 1 0 8c-1.5 0-3-1-4-2"/>
+        </svg>
+      </div>
+      <div class="disease-name">Lung Cancer</div>
+      <div class="disease-tag">Pulmonology · CT Scan</div>
+    </div>
+
+    <div class="disease-card dc-ckd" data-disease="ckd" onclick="selectDisease(this)">
+      <div class="disease-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <ellipse cx="9" cy="12" rx="3" ry="6"/>
+          <ellipse cx="15" cy="12" rx="3" ry="6"/>
+          <path d="M9 6c0-2 1-3 3-3s3 1 3 3"/>
+          <path d="M9 18c0 2 1 3 3 3s3-1 3-3"/>
+        </svg>
+      </div>
+      <div class="disease-name">Kidney Disease</div>
+      <div class="disease-tag">Nephrology · Clinical</div>
+    </div>
+  </div>
+</section>
+
+<!-- FORM SECTION -->
+<section id="form-section">
+  <div class="form-card" id="main-form-card">
+    <div class="form-header" id="form-header">
+      <div class="form-header-icon" id="form-header-icon"></div>
+      <div>
+        <h2 id="form-title">Assessment Form</h2>
+        <p id="form-subtitle">Fill in the patient data below</p>
+      </div>
+    </div>
+    <div class="form-body">
+      <form id="predict-form" enctype="multipart/form-data">
+        <input type="hidden" id="disease-input" name="disease" value="">
+        <div id="form-fields"></div>
+        <button type="submit" class="submit-btn" id="submit-btn">
+          <span class="btn-text">Run Prediction</span>
+          <div class="spinner"></div>
+        </button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- RESULT -->
+<div id="result-section">
+  <div class="result-card" id="result-card">
+    <div class="result-top">
+      <div class="result-icon" id="result-icon">
+        <svg viewBox="0 0 24 24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </div>
+      <div>
+        <div class="result-label" id="result-label">Result</div>
+        <div class="result-value" id="result-value">—</div>
+      </div>
+    </div>
+    <div class="confidence-row">
+      <span class="confidence-label">Confidence</span>
+      <div class="confidence-bar-wrap">
+        <div class="confidence-bar" id="confidence-bar" style="width:0%"></div>
+      </div>
+      <span class="confidence-pct" id="confidence-pct">0%</span>
+    </div>
+    <p class="result-disclaimer">This tool is for research and informational purposes only. Results do not constitute medical advice. Always consult a qualified healthcare professional for diagnosis and treatment.</p>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<section class="how-section" id="how">
+  <div class="how-inner">
+    <h2 class="section-title">How it works</h2>
+    <p class="section-sub">Three simple steps to a risk assessment</p>
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-num">01</div>
+        <div class="step-title">Choose a condition</div>
+        <div class="step-desc">Select from five disease categories — heart, liver, brain, lung, or kidney.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">02</div>
+        <div class="step-title">Enter patient data</div>
+        <div class="step-desc">Input clinical biomarkers or upload a medical scan image for analysis.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">03</div>
+        <div class="step-title">Get your result</div>
+        <div class="step-desc">Receive an instant prediction with a confidence score from our trained ML model.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">04</div>
+        <div class="step-title">Consult a specialist</div>
+        <div class="step-desc">Use the result as a starting point for a conversation with a qualified clinician.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <strong>MediSense AI</strong> · Built for educational & research purposes only. Not a substitute for professional medical advice.
+</footer>
+
+<script>
+const FORMS = {
+  heart: {
+    title: "Heart Disease",
+    subtitle: "Cardiology · 11 clinical features",
+    color: "rose",
+    iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`,
+    fields: [
+      {name:"age", label:"Age", type:"number", placeholder:"e.g. 52"},
+      {name:"sex", label:"Sex", type:"select", options:[["1","Male"],["0","Female"]]},
+      {name:"cp", label:"Chest Pain Type", type:"select", options:[["0","Typical Angina"],["1","Atypical Angina"],["2","Non-Anginal"],["3","Asymptomatic"]]},
+      {name:"trestbps", label:"Resting Blood Pressure", type:"number", placeholder:"mmHg"},
+      {name:"chol", label:"Serum Cholesterol", type:"number", placeholder:"mg/dl"},
+      {name:"fbs", label:"Fasting Blood Sugar > 120", type:"select", options:[["1","Yes"],["0","No"]]},
+      {name:"restecg", label:"Resting ECG", type:"select", options:[["0","Normal"],["1","ST-T Abnormality"],["2","LV Hypertrophy"]]},
+      {name:"thalach", label:"Max Heart Rate", type:"number", placeholder:"bpm"},
+      {name:"exang", label:"Exercise Induced Angina", type:"select", options:[["1","Yes"],["0","No"]]},
+      {name:"oldpeak", label:"ST Depression", type:"number", placeholder:"0.0 – 6.2", step:"0.1"},
+      {name:"slope", label:"ST Slope", type:"select", options:[["0","Upsloping"],["1","Flat"],["2","Downsloping"]]}
+    ]
+  },
+  liver: {
+    title: "Liver Cirrhosis",
+    subtitle: "Hepatology · Lab values",
+    color: "amber",
+    iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="13" rx="8" ry="6"/><path d="M6 10c1-4 4-6 6-6s5 2 6 6"/><path d="M9 15c0 2 1.5 3 3 3"/></svg>`,
+    fields: [
+      {name:"N_Days", label:"Days in Study", type:"number", placeholder:"e.g. 400"},
+      {name:"Age", label:"Age (years)", type:"number", placeholder:"e.g. 58"},
+      {name:"Status", label:"Status", type:"select", options:[["C","Censored"],["CL","Censored Liver TX"],["D","Death"]]},
+      {name:"Drug", label:"Drug", type:"select", options:[["Placebo","Placebo"],["Prednisone","Prednisone"],["Prednisolone","Prednisolone"]]},
+      {name:"Sex", label:"Sex", type:"select", options:[["M","Male"],["F","Female"]]},
+      {name:"Ascites", label:"Ascites", type:"select", options:[["N","No"],["Y","Yes"]]},
+      {name:"Hepatomegaly", label:"Hepatomegaly", type:"select", options:[["N","No"],["Y","Yes"]]},
+      {name:"Spiders", label:"Spider Angiomas", type:"select", options:[["N","No"],["Y","Yes"]]},
+      {name:"Edema", label:"Edema", type:"select", options:[["N","No"],["Y","Yes"]]},
+      {name:"Bilirubin", label:"Bilirubin", type:"number", placeholder:"mg/dl", step:"0.01"},
+      {name:"Cholesterol", label:"Cholesterol", type:"number", placeholder:"mg/dl"},
+      {name:"Albumin", label:"Albumin", type:"number", placeholder:"g/dl", step:"0.01"},
+      {name:"Copper", label:"Copper", type:"number", placeholder:"ug/day"},
+      {name:"Alk_Phos", label:"Alkaline Phosphatase", type:"number", placeholder:"U/liter"},
+      {name:"SGOT", label:"SGOT", type:"number", placeholder:"U/ml", step:"0.01"},
+      {name:"Tryglicerides", label:"Triglycerides", type:"number", placeholder:"mg/dl"},
+      {name:"Platelets", label:"Platelets", type:"number", placeholder:"ml/1000"},
+      {name:"Prothrombin", label:"Prothrombin Time", type:"number", placeholder:"s", step:"0.1"}
+    ]
+  },
+  brain: {
+    title: "Brain Tumor",
+    subtitle: "Neurology · MRI image scan",
+    color: "violet",
+    iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.46 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.46 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24A2.5 2.5 0 0 0 14.5 2Z"/></svg>`,
+    imageField: true
+  },
+  lung: {
+    title: "Lung Cancer",
+    subtitle: "Pulmonology · CT scan image",
+    color: "sky",
+    iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4v8a6 6 0 0 0 12 0V4"/><path d="M12 4v8"/><path d="M6 12a6 6 0 0 0 0 8c1.5 0 3-1 4-2"/><path d="M18 12a6 6 0 0 1 0 8c-1.5 0-3-1-4-2"/></svg>`,
+    imageField: true
+  },
+  ckd: {
+    title: "Kidney Disease (CKD)",
+    subtitle: "Nephrology · 24 clinical features",
+    color: "teal",
+    iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="9" cy="12" rx="3" ry="6"/><ellipse cx="15" cy="12" rx="3" ry="6"/><path d="M9 6c0-2 1-3 3-3s3 1 3 3"/><path d="M9 18c0 2 1 3 3 3s3-1 3-3"/></svg>`,
+    fields: [
+      {name:"age", label:"Age", type:"number", placeholder:"years"},
+      {name:"bp", label:"Blood Pressure", type:"number", placeholder:"mmHg"},
+      {name:"sg", label:"Specific Gravity", type:"number", placeholder:"1.005 – 1.025", step:"0.001"},
+      {name:"al", label:"Albumin (0–5)", type:"number", placeholder:"0 to 5"},
+      {name:"su", label:"Sugar (0–5)", type:"number", placeholder:"0 to 5"},
+      {name:"rbc", label:"Red Blood Cells", type:"select", options:[["Normal","Normal"],["Abnormal","Abnormal"]]},
+      {name:"pc", label:"Pus Cells", type:"select", options:[["Normal","Normal"],["Abnormal","Abnormal"]]},
+      {name:"pcc", label:"Pus Cell Clumps", type:"select", options:[["Not Present","Not Present"],["Present","Present"]]},
+      {name:"ba", label:"Bacteria", type:"select", options:[["Not Present","Not Present"],["Present","Present"]]},
+      {name:"bgr", label:"Blood Glucose Random", type:"number", placeholder:"mgs/dl"},
+      {name:"bu", label:"Blood Urea", type:"number", placeholder:"mgs/dl"},
+      {name:"sc", label:"Serum Creatinine", type:"number", placeholder:"mgs/dl", step:"0.1"},
+      {name:"sod", label:"Sodium", type:"number", placeholder:"mEq/L"},
+      {name:"pot", label:"Potassium", type:"number", placeholder:"mEq/L", step:"0.1"},
+      {name:"hemo", label:"Hemoglobin", type:"number", placeholder:"gms", step:"0.1"},
+      {name:"pcv", label:"Packed Cell Volume", type:"number", placeholder:"%"},
+      {name:"wcc", label:"White Blood Cell Count", type:"number", placeholder:"cells/cumm"},
+      {name:"rc", label:"Red Blood Cell Count", type:"number", placeholder:"millions/cmm", step:"0.1"},
+      {name:"htn", label:"Hypertension", type:"select", options:[["Yes","Yes"],["No","No"]]},
+      {name:"dm", label:"Diabetes Mellitus", type:"select", options:[["Yes","Yes"],["No","No"]]},
+      {name:"cad", label:"Coronary Artery Disease", type:"select", options:[["Yes","Yes"],["No","No"]]},
+      {name:"appet", label:"Appetite", type:"select", options:[["Good","Good"],["Poor","Poor"]]},
+      {name:"pe", label:"Pedal Edema", type:"select", options:[["Yes","Yes"],["No","No"]]},
+      {name:"ane", label:"Anemia", type:"select", options:[["Yes","Yes"],["No","No"]]}
+    ]
+  }
+};
+
+const COLOR_MAP = {
+  rose: { bg: "var(--rose-light)", border: "var(--rose)", icon: "var(--rose)" },
+  amber: { bg: "var(--amber-light)", border: "var(--amber)", icon: "var(--amber)" },
+  violet: { bg: "var(--violet-light)", border: "var(--violet)", icon: "var(--violet)" },
+  sky: { bg: "var(--sky-light)", border: "var(--sky)", icon: "var(--sky)" },
+  teal: { bg: "var(--teal-light)", border: "var(--teal)", icon: "var(--teal)" }
+};
+
+let currentDisease = null;
+
+function selectDisease(card) {
+  document.querySelectorAll('.disease-card').forEach(c => c.classList.remove('active'));
+  card.classList.add('active');
+  const disease = card.dataset.disease;
+  currentDisease = disease;
+  renderForm(disease);
+  document.getElementById('result-section').classList.remove('visible');
+  setTimeout(() => {
+    document.getElementById('form-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 100);
+}
+
+function renderForm(disease) {
+  const cfg = FORMS[disease];
+  const sec = document.getElementById('form-section');
+  const col = COLOR_MAP[cfg.color];
+
+  document.getElementById('disease-input').value = disease;
+  document.getElementById('form-title').textContent = cfg.title;
+  document.getElementById('form-subtitle').textContent = cfg.subtitle;
+
+  const headerIcon = document.getElementById('form-header-icon');
+  headerIcon.innerHTML = cfg.iconSvg;
+  headerIcon.style.background = col.bg;
+  headerIcon.querySelector('svg').style.stroke = col.border;
+
+  const fieldsEl = document.getElementById('form-fields');
+  fieldsEl.innerHTML = '';
+
+  if (cfg.imageField) {
+    fieldsEl.innerHTML = `
+      <div class="upload-area" id="upload-area" onclick="document.getElementById('file-input').click()">
+        <div class="upload-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="3"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <polyline points="21 15 16 10 5 21"/>
+          </svg>
+        </div>
+        <div class="upload-text"><strong>Click to upload</strong> or drag & drop<br><span style="font-size:0.78rem">PNG, JPG, JPEG supported</span></div>
+        <img id="preview-img" alt="Preview">
+      </div>
+      <input type="file" id="file-input" name="file" accept="image/*" onchange="handleFile(this)">
+    `;
+  } else if (cfg.fields) {
+    const grid = document.createElement('div');
+    grid.className = 'form-grid';
+    cfg.fields.forEach(f => {
+      const div = document.createElement('div');
+      div.className = 'field';
+      if (f.type === 'select') {
+        div.innerHTML = `<label>${f.label}</label><select name="${f.name}">${f.options.map(o=>`<option value="${o[0]}">${o[1]}</option>`).join('')}</select>`;
+      } else {
+        div.innerHTML = `<label>${f.label}</label><input type="${f.type}" name="${f.name}" placeholder="${f.placeholder||''}" ${f.step?`step="${f.step}"`:''}/>`;
+      }
+      grid.appendChild(div);
+    });
+    fieldsEl.appendChild(grid);
+  }
+
+  sec.classList.add('visible');
+}
+
+function handleFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const area = document.getElementById('upload-area');
+  area.classList.add('has-file');
+  const prev = document.getElementById('preview-img');
+  prev.src = URL.createObjectURL(file);
+  prev.style.display = 'block';
+  area.querySelector('.upload-text').innerHTML = `<strong>${file.name}</strong><br><span style="font-size:0.78rem;color:var(--sage-dark)">File ready</span>`;
+}
+
+document.getElementById('predict-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const btn = document.getElementById('submit-btn');
+  btn.classList.add('loading');
+
+  const formData = new FormData(this);
+
+  // File upload
+  if (FORMS[currentDisease]?.imageField) {
+    const fi = document.getElementById('file-input');
+    if (fi && fi.files[0]) formData.append('file', fi.files[0]);
+  }
+
+  try {
+    const res = await fetch('/predict', { method: 'POST', body: formData });
+    const data = await res.json();
+    showResult(data);
+  } catch (err) {
+    showResult({ error: 'Network error: ' + err.message });
+  } finally {
+    btn.classList.remove('loading');
+  }
+});
+
+function showResult(data) {
+  const sec = document.getElementById('result-section');
+  const card = document.getElementById('result-card');
+  const label = document.getElementById('result-label');
+  const val = document.getElementById('result-value');
+  const bar = document.getElementById('confidence-bar');
+  const pct = document.getElementById('confidence-pct');
+  const icon = document.getElementById('result-icon');
+
+  card.className = 'result-card';
+
+  if (data.error) {
+    card.classList.add('error');
+    label.textContent = 'Error';
+    val.textContent = data.error;
+    bar.style.width = '0%';
+    pct.textContent = '—';
+    icon.innerHTML = `<svg viewBox="0 0 24 24" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+  } else {
+    const isPos = data.prediction === 'Positive' || data.prediction === 'CKD' || data.prediction === 'Malignant';
+    card.classList.add(isPos ? 'positive' : 'negative');
+    label.textContent = data.disease + ' · Prediction';
+    val.textContent = data.prediction;
+    const conf = data.confidence || 0;
+
+    setTimeout(() => {
+      bar.style.width = conf + '%';
+      pct.textContent = conf + '%';
+    }, 100);
+
+    if (!isPos) {
+      icon.innerHTML = `<svg viewBox="0 0 24 24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+    } else {
+      icon.innerHTML = `<svg viewBox="0 0 24 24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+    }
+  }
+
+  sec.classList.add('visible');
+  setTimeout(() => sec.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+}
+</script>
+</body>
+</html>
