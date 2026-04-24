@@ -20,6 +20,8 @@ lung_model = None
 liver_model = None
 
 
+
+
 # ---------------- BUILD ARCHITECTURES ----------------
 def build_brain_model():
     model = keras.Sequential([
